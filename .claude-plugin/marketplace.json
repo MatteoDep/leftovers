@@ -1,0 +1,14 @@
+{
+  "name": "leftovers",
+  "description": "Leftovers: a dashboard of open work left behind in your Claude Code sessions.",
+  "owner": {
+    "name": "Matteo De Pellegrin"
+  },
+  "plugins": [
+    {
+      "name": "leftovers",
+      "source": "./",
+      "description": "Find the work you left unfinished across your Claude Code sessions, in a private claude.ai dashboard."
+    }
+  ]
+}

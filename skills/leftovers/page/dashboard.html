@@ -1,0 +1,323 @@
+<title>Session Leftovers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column worklist; sticky filter bar; projects as sections, sessions as blocks, items as rows. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #1b2230; --muted: #5d6779; --line: #dde1e8;
+  --accent: #b5580e; --accent-soft: #fbeee2;
+  --high: #c0392b; --high-soft: #fbe9e7; --med: #9a6b00; --med-soft: #fbf3dc; --low: #4f6b8a; --low-soft: #e8eef5;
+  --ok: #2e7d4f; --ok-soft: #e3f3ea;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --panel: #1a1f28; --fg: #e3e7ee; --muted: #949db0; --line: #2b3240;
+  --accent: #f0a05a; --accent-soft: #3a2a1b;
+  --high: #ff8a7a; --high-soft: #3c201e; --med: #e9c25a; --med-soft: #352d16; --low: #9ab8da; --low-soft: #1f2a38;
+  --ok: #6fcf97; --ok-soft: #1b3326; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --panel: #1a1f28; --fg: #e3e7ee; --muted: #949db0; --line: #2b3240;
+  --accent: #f0a05a; --accent-soft: #3a2a1b;
+  --high: #ff8a7a; --high-soft: #3c201e; --med: #e9c25a; --med-soft: #352d16; --low: #9ab8da; --low-soft: #1f2a38;
+  --ok: #6fcf97; --ok-soft: #1b3326; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 10px 28px; font-variant-numeric: tabular-nums; }
+.stat b { display: block; font-size: 24px; font-weight: 600; }
+.stat span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.stat.hi b { color: var(--high); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { font: inherit; border: 0; background: transparent; color: var(--muted); padding: 6px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+select, input[type=search] { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; min-width: 0; }
+input[type=search] { flex: 1 1 180px; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.project { display: grid; gap: 10px; }
+.project > h2 { margin: 8px 0 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: flex; gap: 8px; align-items: baseline; }
+.project > h2 small { font-weight: 500; letter-spacing: 0; text-transform: none; }
+.session { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.shead { padding: 12px 14px 10px; display: grid; gap: 4px; border-bottom: 1px solid var(--line); }
+.stitle { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.stitle h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.meta { color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.meta code, .resume code { font-family: var(--font-mono); font-size: 11.5px; }
+.summary { color: var(--muted); margin: 0; max-width: 90ch; }
+.resume { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.resume code { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; overflow-x: auto; white-space: nowrap; min-width: 0; }
+.copy { font: inherit; font-size: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); border-radius: 6px; padding: 2px 8px; cursor: pointer; flex: none; }
+ul.items { list-style: none; margin: 0; padding: 0; }
+li.item { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; padding: 9px 14px; border-top: 1px solid var(--line); align-items: start; }
+li.item:first-child { border-top: 0; }
+li.item input[type=checkbox] { width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--ok); cursor: pointer; }
+.itext { min-width: 0; display: grid; gap: 3px; }
+.itext .t { font-weight: 500; overflow-wrap: anywhere; }
+.itext .d { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.chk { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+.chk-done { color: var(--ok); }
+.chk-open { color: var(--accent); }
+li.item.done .t, li.item.dismissed .t { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+li.item.dismissed { opacity: 0.6; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.chip { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 8px; white-space: nowrap; text-transform: lowercase; }
+.p-high { background: var(--high-soft); color: var(--high); }
+.p-medium { background: var(--med-soft); color: var(--med); }
+.p-low { background: var(--low-soft); color: var(--low); }
+.kind { border: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+.chip.pr { background: var(--accent-soft); color: var(--accent); text-transform: none; text-decoration: none; }
+.chip.pr:hover { text-decoration: underline; }
+.prlink { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.st-open { background: var(--accent-soft); color: var(--accent); }
+.st-done { background: var(--ok-soft); color: var(--ok); }
+.st-abandoned { background: var(--line); color: var(--muted); }
+.st-blocked { background: var(--high-soft); color: var(--high); }
+.dismiss { font: inherit; font-size: 12px; background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0 2px; text-decoration: underline; text-underline-offset: 2px; }
+.empty, .notice { background: var(--panel); border: 1px dashed var(--line); border-radius: 10px; padding: 20px; color: var(--muted); }
+.notice { border-style: solid; }
+@media (max-width: 560px) { li.item { grid-template-columns: auto 1fr; } .chips { grid-column: 2; justify-content: flex-start; } }
+@media (prefers-reduced-motion: no-preference) { li.item { transition: opacity .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Session Leftovers</h1>
+    <p>Open points pulled from your recent Claude Code sessions (re-scanned over the last 14 days; older sessions stay while they have open items). Tick an item when it is done, or dismiss it if it no longer matters. Each session shows the command to resume it. Items about branches and PRs were checked against git and GitHub or Bitbucket; the rest may already be done elsewhere. <span id="scanned"></span></p>
+  </header>
+  <div class="stats" id="stats">
+    <div class="stat"><b id="s-open">-</b><span>open items</span></div>
+    <div class="stat hi"><b id="s-high">-</b><span>high priority</span></div>
+    <div class="stat"><b id="s-sess">-</b><span>sessions with leftovers</span></div>
+    <div class="stat"><b id="s-done">-</b><span>done</span></div>
+    <div class="stat"><b id="s-scan">-</b><span>scanned</span></div>
+  </div>
+  <div class="bar" role="toolbar" aria-label="Filters">
+    <div class="seg" id="f-state">
+      <button type="button" data-v="open" aria-pressed="true">Open</button>
+      <button type="button" data-v="done" aria-pressed="false">Done</button>
+      <button type="button" data-v="dismissed" aria-pressed="false">Dismissed</button>
+      <button type="button" data-v="all" aria-pressed="false">All</button>
+    </div>
+    <select id="f-prio" aria-label="Priority">
+      <option value="">Any priority</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+    </select>
+    <select id="f-proj" aria-label="Project"><option value="">All projects</option></select>
+    <input id="f-q" type="search" placeholder="Search items, tickets, branches" aria-label="Search">
+  </div>
+  <div id="notices" role="status" aria-live="polite"></div>
+  <main id="list"><div class="empty">Loading leftovers...</div></main>
+</div>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const PR = { high: 0, medium: 1, low: 2 };
+  // meta/sessions and meta/items hold the scanned content; live/<sessionId> holds items a session added since
+  // the last scan; state/<itemId> holds what the viewer ticked, or what a session closed (with `by`)
+  let scanSessions = [], liveDocs = [], sessions = [], baseItems = [], states = {}, items = [], scannedAt = '', db = null, canWrite = true;
+  // the stored state wins; otherwise the git/Bitbucket check decides the starting state
+  const AUTO = { done: 'done', duplicate: 'dismissed' };
+  const projectOf = (cwd) => { const b = (cwd || '').replace(/\/+$/, '').split('/').pop() || 'other'; return { '.claude': 'claude config' }[b] || b; };
+  const merge = () => {
+    const ids = new Set(baseItems.map((i) => i.id)), known = new Set(scanSessions.map((s) => s.id));
+    const live = liveDocs.flatMap((d) => (Array.isArray(d.items) ? d.items : []).map((i, n) => ({ ...i, session_id: d.session_id, order: 100 + n, live: true }))).filter((i) => !ids.has(i.id));
+    sessions = scanSessions.concat(liveDocs.filter((d) => d.session_id && !known.has(d.session_id)).map((d) => ({
+      id: d.session_id, title: d.title || 'Session ' + d.session_id.slice(0, 8), project: projectOf(d.cwd), branch: d.branch || '',
+      cwd: d.cwd || '', last_activity: d.updated_at || '', status: 'open', summary: 'Not scanned yet: items added live by the session.' })));
+    items = baseItems.concat(live).map((i) => ({ ...i, state: (states[i.id] && states[i.id].state) || AUTO[i.check && i.check.status] || 'open' }));
+  };
+  const f = { state: 'open', prio: '', proj: '', q: '' };
+  try { const s = JSON.parse(localStorage.getItem('lo-filters') || '{}'); Object.assign(f, s); } catch (e) {}
+  const saveF = () => { try { localStorage.setItem('lo-filters', JSON.stringify(f)); } catch (e) {} };
+
+  function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function fmtDate(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+  function stateOf(it) { return it.state || 'open'; }
+
+  // PR links: the scan stores each item's PR page in refs.url (GitHub or Bitbucket, from the repo's
+  // own remote). Only those two hosts' plain PR pages are linked: refs come from model output.
+  const PR_PAGE = /^https:\/\/(?:github\.com\/[\w.-]+\/[\w.-]+\/pull|bitbucket\.org\/[\w.-]+\/[\w.-]+\/pull-requests)\/\d{1,6}$/;
+  const prOf = (i) => { const u = i.refs && i.refs.url; return typeof u === 'string' && PR_PAGE.test(u) ? u : null; };
+  // text with each "PR #123" turned into a link (text nodes and anchors only, never HTML)
+  // the item's own PR number in its text becomes a link to its PR page
+  function linked(text, url) {
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    const own = url && url.split('/').pop();
+    if (url) for (const m of text.matchAll(/\bPR ?#?(\d{1,6})\b/g)) {
+      if (m[1] !== own) continue;
+      frag.append(text.slice(last, m.index));
+      const a = el('a', 'prlink', m[0]); a.href = url; a.target = '_blank'; a.rel = 'noopener';
+      frag.append(a); last = m.index + m[0].length;
+    }
+    frag.append(text.slice(last));
+    return frag;
+  }
+
+  function setControls() {
+    document.querySelectorAll('#f-state button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === f.state)));
+    $('#f-prio').value = f.prio;
+    if (document.activeElement !== $('#f-q')) $('#f-q').value = f.q;
+    const projs = [...new Set(sessions.map((s) => s.project).filter(Boolean))].sort();
+    const sel = $('#f-proj');
+    sel.replaceChildren(new Option('All projects', ''), ...projs.map((p) => new Option(p, p)));
+    if (sessions.length && f.proj && !projs.includes(f.proj)) { f.proj = ''; saveF(); }
+    sel.value = f.proj;
+  }
+
+  function render() {
+    setControls();
+    const open = items.filter((i) => stateOf(i) === 'open');
+    $('#s-open').textContent = open.length;
+    $('#s-high').textContent = open.filter((i) => i.priority === 'high').length;
+    $('#s-sess').textContent = new Set(open.map((i) => i.session_id)).size;
+    $('#s-done').textContent = items.filter((i) => stateOf(i) === 'done').length;
+    $('#s-scan').textContent = sessions.length;
+    $('#scanned').textContent = scannedAt ? 'Last scan ' + fmtDate(scannedAt) + '.' : '';
+
+    const list = $('#list');
+    if (!sessions.length) { list.replaceChildren(el('div', 'empty', db ? 'No sessions stored yet. Ask Claude to scan your sessions and fill this page.' : 'Loading leftovers...')); return; }
+    const q = f.q.trim().toLowerCase();
+    const byS = new Map(sessions.map((s) => [s.id, s]));
+    const shown = items.filter((i) => {
+      const s = byS.get(i.session_id); if (!s) return false;
+      if (f.state !== 'all' && stateOf(i) !== f.state) return false;
+      if (f.prio && i.priority !== f.prio) return false;
+      if (f.proj && s.project !== f.proj) return false;
+      if (q && ![i.text, i.detail, s.title, s.branch, s.project, s.summary].join(' ').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    // group project -> session, projects ordered by most urgent then newest
+    const groups = new Map();
+    for (const i of shown) {
+      const s = byS.get(i.session_id);
+      if (!groups.has(s.project)) groups.set(s.project, new Map());
+      const g = groups.get(s.project);
+      if (!g.has(s.id)) g.set(s.id, []);
+      g.get(s.id).push(i);
+    }
+    const score = (arr) => Math.min(...arr.map((i) => PR[i.priority] ?? 3));
+    const latest = (sid) => byS.get(sid).last_activity || '';
+    const projOrder = [...groups.entries()].map(([p, g]) => {
+      const all = [...g.values()].flat();
+      return { p, g, sc: score(all), lt: [...g.keys()].map(latest).sort().pop() };
+    }).sort((a, b) => a.sc - b.sc || (b.lt > a.lt ? 1 : -1));
+
+    if (!projOrder.length) { list.replaceChildren(el('div', 'empty', 'Nothing matches these filters.')); return; }
+    const frag = document.createDocumentFragment();
+    for (const { p, g } of projOrder) {
+      const sec = el('section', 'project');
+      const h = el('h2', null, p || 'other');
+      const n = [...g.values()].reduce((a, b) => a + b.length, 0);
+      h.appendChild(el('small', null, n + (n === 1 ? ' item' : ' items')));
+      sec.appendChild(h);
+      const sids = [...g.keys()].sort((a, b) => score(g.get(a)) - score(g.get(b)) || (latest(b) > latest(a) ? 1 : -1));
+      for (const sid of sids) sec.appendChild(sessionCard(byS.get(sid), g.get(sid)));
+      frag.appendChild(sec);
+    }
+    list.replaceChildren(frag);
+  }
+
+  function sessionCard(s, its) {
+    const card = el('article', 'session');
+    const head = el('div', 'shead');
+    const t = el('div', 'stitle');
+    t.appendChild(el('h3', null, s.title || s.id));
+    t.appendChild(el('span', 'chip st-' + (s.status || 'open'), s.status || 'open'));
+    head.appendChild(t);
+    const meta = el('div', 'meta');
+    meta.appendChild(el('span', null, 'last active ' + fmtDate(s.last_activity)));
+    if (s.branch) { const b = el('span', null, 'branch '); b.appendChild(el('code', null, s.branch)); meta.appendChild(b); }
+    head.appendChild(meta);
+    if (s.summary) head.appendChild(el('p', 'summary', s.summary));
+    const cmd = (s.cwd ? 'cd ' + s.cwd + ' && ' : '') + 'claude -r ' + s.id;
+    const r = el('div', 'resume');
+    r.appendChild(el('code', null, cmd));
+    const c = el('button', 'copy', 'Copy'); c.type = 'button';
+    c.addEventListener('click', () => {
+      const done = () => { c.textContent = 'Copied'; setTimeout(() => (c.textContent = 'Copy'), 1500); };
+      const fallback = () => { const sel = getSelection(); const rg = document.createRange(); rg.selectNodeContents(r.firstChild); sel.removeAllRanges(); sel.addRange(rg); c.textContent = 'Selected'; };
+      try { navigator.clipboard.writeText(cmd).then(done, fallback); } catch (e) { fallback(); }
+    });
+    r.appendChild(c);
+    head.appendChild(r);
+    card.appendChild(head);
+
+    const ul = el('ul', 'items');
+    its.sort((a, b) => (PR[a.priority] ?? 3) - (PR[b.priority] ?? 3) || (a.order ?? 0) - (b.order ?? 0));
+    for (const i of its) ul.appendChild(itemRow(i));
+    card.appendChild(ul);
+    return card;
+  }
+
+  function itemRow(i) {
+    const st = stateOf(i);
+    const li = el('li', 'item ' + st);
+    const cb = el('input'); cb.type = 'checkbox'; cb.id = 'cb-' + i.id; cb.checked = st === 'done';
+    cb.disabled = !canWrite || !db; cb.setAttribute('aria-label', 'Done: ' + i.text);
+    cb.addEventListener('change', () => setState(i, cb.checked ? 'done' : 'open'));
+    li.appendChild(cb);
+    const tx = el('div', 'itext');
+    const prPage = prOf(i);
+    const lab = el('label', 't'); lab.append(linked(i.text, prPage)); lab.htmlFor = cb.id; tx.appendChild(lab);
+    if (i.detail) { const d = el('div', 'd'); d.append(linked(i.detail, prPage)); tx.appendChild(d); }
+    if (i.check && i.check.status && i.check.status !== 'unknown') {
+      const label = { done: 'Checked, done: ', open: 'Checked, still open: ', duplicate: 'Duplicate: ' }[i.check.status] || 'Checked: ';
+      const c = el('div', 'chk chk-' + i.check.status, label); c.append(linked(i.check.note || '', prPage)); tx.appendChild(c);
+    }
+    const by = states[i.id] && states[i.id].by;
+    if (by && st === 'done') tx.appendChild(el('div', 'chk chk-done', 'Closed by session ' + String(by).slice(0, 8)));
+    li.appendChild(tx);
+    const ch = el('div', 'chips');
+    if (prPage) {
+      const a = el('a', 'chip pr', 'PR #' + prPage.split('/').pop()); a.href = prPage; a.target = '_blank'; a.rel = 'noopener';
+      a.title = prPage; ch.appendChild(a);
+    }
+    ch.appendChild(el('span', 'chip p-' + (i.priority || 'low'), i.priority || 'low'));
+    if (i.kind) ch.appendChild(el('span', 'chip kind', i.kind));
+    if (i.live) ch.appendChild(el('span', 'chip kind', 'live'));
+    if (canWrite && db) {
+      const d = el('button', 'dismiss', st === 'dismissed' ? 'restore' : 'dismiss'); d.type = 'button';
+      d.addEventListener('click', () => setState(i, st === 'dismissed' ? 'open' : 'dismissed'));
+      ch.appendChild(d);
+    }
+    li.appendChild(ch);
+    return li;
+  }
+
+  async function setState(i, state) {
+    const prev = states[i.id];
+    states[i.id] = { state }; merge(); render();
+    try { await db.doc('state/' + i.id).set({ state, updated_at: new Date().toISOString() }); }
+    catch (e) {
+      if (prev) states[i.id] = prev; else delete states[i.id];
+      merge();
+      if (e && e.code === 'invalid_argument') canWrite = false;
+      render();
+      showNotice(e && e.code === 'invalid_argument' ? 'You can view this list but not change it.' : 'Could not save that change. Try again in a moment.');
+    }
+  }
+  function showNotice(msg) { const n = el('div', 'notice', msg); $('#notices').replaceChildren(n); setTimeout(() => n.remove(), 6000); }
+
+  document.querySelectorAll('#f-state button').forEach((b) => b.addEventListener('click', () => { f.state = b.dataset.v; saveF(); render(); }));
+  $('#f-prio').addEventListener('change', (e) => { f.prio = e.target.value; saveF(); render(); });
+  $('#f-proj').addEventListener('change', (e) => { f.proj = e.target.value; saveF(); render(); });
+  $('#f-q').addEventListener('input', (e) => { f.q = e.target.value; saveF(); render(); });
+
+  render();
+  (async () => {
+    db = window.claude ? await window.claude.use('db') : null;
+    if (!db) { $('#list').replaceChildren(el('div', 'empty', 'The saved list is not available in this view. Open the page on claude.ai while signed in.')); return; }
+    try { const u = await window.claude.use('user'); const w = u && await u.can('data.write'); if (w === false) canWrite = false; } catch (e) {}
+    const err = () => showNotice('Lost the connection to the saved list. Reload the page.');
+    db.doc('meta/sessions').onSnapshot((d) => { const v = d.exists ? d.data() : {}; scanSessions = Array.isArray(v.sessions) ? v.sessions : []; scannedAt = v.scanned_at || ''; merge(); render(); }, err);
+    db.collection('live').limit(500).onSnapshot((snap) => { liveDocs = snap.docs.map((d) => d.data()); merge(); render(); }, err);
+    db.doc('meta/items').onSnapshot((d) => { const v = d.exists ? d.data() : {}; baseItems = Array.isArray(v.items) ? v.items : []; merge(); render(); }, err);
+    db.collection('state').limit(1000).onSnapshot((snap) => { states = {}; snap.docs.forEach((d) => { states[d.id] = d.data(); }); merge(); render(); }, err);
+  })();
+})();
+</script>

@@ -1,0 +1,8 @@
+{
+  "name": "leftovers",
+  "version": "1.0.0",
+  "description": "Find the work you left unfinished across your Claude Code sessions: a /leftovers scan into a private claude.ai dashboard, checked against git and GitHub/Bitbucket PRs, kept current live by your sessions.",
+  "author": { "name": "Matteo De Pellegrin" },
+  "license": "MIT",
+  "keywords": ["productivity", "sessions", "dashboard", "todo"]
+}
